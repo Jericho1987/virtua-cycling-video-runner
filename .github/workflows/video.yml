@@ -39,8 +39,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          cache: pip
-          cache-dependency-path: requirements-runner.txt
+
+      - name: Librerie Python in cache (ambiente gia' installato)
+        id: venv
+        uses: actions/cache@v4
+        with:
+          path: ~/venv
+          key: venv-${{ runner.os }}-py312-${{ hashFiles('requirements-runner.txt') }}
 
       - name: ffmpeg (veloce)
         id: ffmpeg
@@ -54,7 +59,7 @@ jobs:
           PKG=""; command -v zsh > /dev/null || PKG="zsh"
           command -v ffmpeg > /dev/null || PKG="$PKG ffmpeg"     # ripiego se il passo veloce fallisce
           [[ -z "$PKG" ]] || { sudo apt-get update -qq && sudo apt-get install -y -qq $PKG > /dev/null; }
-          pip install -q -r requirements-runner.txt
+          [[ -x ~/venv/bin/python ]] || { python -m venv ~/venv && ~/venv/bin/pip install -q -r requirements-runner.txt; }
 
       - name: Teste in cache
         uses: actions/cache@v4
@@ -83,4 +88,4 @@ jobs:
         run: |
           [[ "$TAPPA" =~ ^[0-9]+$ ]] || { echo "tappa non valida"; exit 1; }
           FF=""; [[ "$FOTOFINISH" == "true" ]] && FF="--fotofinish"
-          VC_PY=$(which python) python -I generatore/esegui.py --tappa "$TAPPA" $FF
+          VC_PY=~/venv/bin/python ~/venv/bin/python -I generatore/esegui.py --tappa "$TAPPA" $FF
