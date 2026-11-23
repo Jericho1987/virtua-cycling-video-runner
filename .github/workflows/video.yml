@@ -13,6 +13,11 @@ on:
         description: arrivo al fotofinish (mai inventato)
         type: boolean
         default: false
+      risoluzione:
+        description: risoluzione del video
+        type: choice
+        options: ['1080', '720']
+        default: '1080'
   repository_dispatch:
     types: [genera_video]
 
@@ -85,6 +90,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           VC_TESTE: ${{ github.workspace }}/cache_teste
+          VC_SS: ${{ (github.event.inputs.risoluzione || github.event.client_payload.risoluzione) == '720' && '0.6667' || '1' }}
         run: |
           [[ "$TAPPA" =~ ^[0-9]+$ ]] || { echo "tappa non valida"; exit 1; }
           FF=""; [[ "$FOTOFINISH" == "true" ]] && FF="--fotofinish"
