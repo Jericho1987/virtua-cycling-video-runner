@@ -55,6 +55,17 @@ jobs:
           path: cache_teste
           key: teste-${{ hashFiles('generatore/teste_generiche.json') }}
 
+      - name: Versione delle figure
+        id: ver
+        run: echo "v=$(grep -m1 -oE '^VERSIONE *= *[0-9]+' motore/personaggi.py | grep -oE '[0-9]+')" >> "$GITHUB_OUTPUT"
+
+      - name: Figure dei corridori in cache (crescono a ogni video)
+        uses: actions/cache@v4
+        with:
+          path: cache
+          key: corridori-${{ steps.ver.outputs.v }}-${{ github.run_id }}
+          restore-keys: corridori-${{ steps.ver.outputs.v }}-
+
       - name: Video
         env:
           TAPPA: ${{ github.event.inputs.tappa || github.event.client_payload.tappa }}
