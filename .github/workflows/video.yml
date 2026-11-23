@@ -61,9 +61,7 @@ jobs:
 
       - name: Strumenti
         run: |
-          PKG=""; command -v zsh > /dev/null || PKG="zsh"
-          command -v ffmpeg > /dev/null || PKG="$PKG ffmpeg"     # ripiego se il passo veloce fallisce
-          [[ -z "$PKG" ]] || { sudo apt-get update -qq && sudo apt-get install -y -qq $PKG > /dev/null; }
+          command -v ffmpeg > /dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg > /dev/null; }   # ripiego se il passo veloce fallisce
           [[ -x ~/venv/bin/python ]] || { python -m venv ~/venv && ~/venv/bin/pip install -q -r requirements-runner.txt; }
 
       - name: Teste in cache
