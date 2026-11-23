@@ -39,12 +39,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+          cache: pip
+          cache-dependency-path: requirements-runner.txt
+
+      - uses: FedericoCarboni/setup-ffmpeg@v3
 
       - name: Strumenti
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq ffmpeg zsh > /dev/null
-          pip install -q numpy==2.0.2 opencv-python-headless==5.0.0.93 pillow==11.3.0
+          command -v zsh > /dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq zsh > /dev/null; }
+          pip install -q -r requirements-runner.txt
 
       - name: Teste in cache
         uses: actions/cache@v4
