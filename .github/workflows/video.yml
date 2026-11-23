@@ -1,0 +1,65 @@
+# Crea il video d'arrivo di una tappa (generatore social di Virtua Cycling).
+# Il motore sta in un repository PRIVATO: qui c'e' solo questo workflow.
+# I log di questo repository sono pubblici: il generatore stampa solo tappa, categoria, esito e tempi.
+name: Video arrivo
+
+on:
+  workflow_dispatch:
+    inputs:
+      tappa:
+        description: id_stage della tappa
+        required: true
+      fotofinish:
+        description: arrivo al fotofinish (mai inventato)
+        type: boolean
+        default: false
+  repository_dispatch:
+    types: [genera_video]
+
+concurrency:
+  group: video-${{ github.event.inputs.tappa || github.event.client_payload.tappa }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  video:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Motore (repository privato)
+        uses: actions/checkout@v4
+        with:
+          repository: Jericho1987/virtua-cycling-video
+          ref: master
+          token: ${{ secrets.VIDEO_REPO_TOKEN }}
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Strumenti
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg zsh > /dev/null
+          pip install -q numpy==2.0.2 opencv-python-headless==5.0.0.93 pillow==11.3.0
+
+      - name: Teste in cache
+        uses: actions/cache@v4
+        with:
+          path: cache_teste
+          key: teste-${{ hashFiles('generatore/teste_generiche.json') }}
+
+      - name: Video
+        env:
+          TAPPA: ${{ github.event.inputs.tappa || github.event.client_payload.tappa }}
+          FOTOFINISH: ${{ github.event.inputs.fotofinish || github.event.client_payload.fotofinish }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          VC_TESTE: ${{ github.workspace }}/cache_teste
+        run: |
+          [[ "$TAPPA" =~ ^[0-9]+$ ]] || { echo "tappa non valida"; exit 1; }
+          FF=""; [[ "$FOTOFINISH" == "true" ]] && FF="--fotofinish"
+          VC_PY=$(which python) python -I generatore/esegui.py --tappa "$TAPPA" $FF
