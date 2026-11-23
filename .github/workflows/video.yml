@@ -42,11 +42,18 @@ jobs:
           cache: pip
           cache-dependency-path: requirements-runner.txt
 
-      - uses: FedericoCarboni/setup-ffmpeg@v3
+      - name: ffmpeg (veloce)
+        id: ffmpeg
+        uses: FedericoCarboni/setup-ffmpeg@v3
+        continue-on-error: true
+        with:
+          github-token: ${{ github.token }}
 
       - name: Strumenti
         run: |
-          command -v zsh > /dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq zsh > /dev/null; }
+          PKG=""; command -v zsh > /dev/null || PKG="zsh"
+          command -v ffmpeg > /dev/null || PKG="$PKG ffmpeg"     # ripiego se il passo veloce fallisce
+          [[ -z "$PKG" ]] || { sudo apt-get update -qq && sudo apt-get install -y -qq $PKG > /dev/null; }
           pip install -q -r requirements-runner.txt
 
       - name: Teste in cache
