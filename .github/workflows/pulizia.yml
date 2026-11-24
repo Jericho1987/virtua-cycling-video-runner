@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       esegui:
-        description: cancella davvero (se spento: solo prova, conta e basta)
+        description: 'Cancella davvero (se spento si fa solo la prova: conta e basta)'
         type: boolean
         default: false
 
