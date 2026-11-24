@@ -21,8 +21,8 @@ on:
       asset:
         description: 'tutti = scarica tutto il repo (come oggi); su_misura = solo il codice, poi i soli asset che il video usa'
         type: choice
-        options: ['tutti', 'su_misura']
-        default: 'tutti'
+        options: ['su_misura', 'tutti']
+        default: 'su_misura'
       freddo:
         description: 'Prova a freddo: non ripristina la cache delle figure (misura il costo di una tappa nuova)'
         type: boolean
@@ -47,7 +47,7 @@ jobs:
     timeout-minutes: 60
     steps:
       - name: Motore (repository privato, tutto)
-        if: (github.event.inputs.asset || github.event.client_payload.asset) != 'su_misura'
+        if: (github.event.inputs.asset || github.event.client_payload.asset || 'su_misura') == 'tutti'
         uses: actions/checkout@v4
         with:
           repository: Jericho1987/virtua-cycling-video
@@ -56,7 +56,7 @@ jobs:
           persist-credentials: false
 
       - name: Motore (repository privato, solo codice, asset su misura dopo)
-        if: (github.event.inputs.asset || github.event.client_payload.asset) == 'su_misura'
+        if: (github.event.inputs.asset || github.event.client_payload.asset || 'su_misura') != 'tutti'
         uses: actions/checkout@v4
         with:
           repository: Jericho1987/virtua-cycling-video
@@ -134,12 +134,15 @@ jobs:
           VC_TESTE: ${{ github.workspace }}/cache_teste
           VC_SS: ${{ (github.event.inputs.risoluzione || github.event.client_payload.risoluzione) == '720' && '0.6667' || '1' }}
           PROCESSI: ${{ github.event.inputs.processi }}
-          VC_ASSET: ${{ (github.event.inputs.asset || github.event.client_payload.asset) == 'su_misura' && 'su_misura' || '' }}
+          VC_ASSET: ${{ (github.event.inputs.asset || github.event.client_payload.asset || 'su_misura') != 'tutti' && 'su_misura' || '' }}
         run: |
           if [[ -n "$PROCESSI" ]]; then [[ "$PROCESSI" =~ ^[1-9][0-9]*$ ]] || { echo "processi non validi"; exit 1; }; export VC_PROCESSI="$PROCESSI"; fi
           [[ "$TAPPA" =~ ^[0-9]+$ ]] || { echo "tappa non valida"; exit 1; }
           FF=""; [[ "$FOTOFINISH" == "true" ]] && FF="--fotofinish"
           VC_PY=~/venv/bin/python ~/venv/bin/python -I generatore/esegui.py --tappa "$TAPPA" $FF
+
+      - name: Tetto di dimensione della cache delle figure
+        run: ~/venv/bin/python -I copioni/pulisci_cache_dimensione.py cache 150
 
       - name: Elenco delle figure dopo il video
         id: fig_dopo
