@@ -1,6 +1,66 @@
 [
- {"tappa": "157", "freddo": true, "nota": "batteria 4: alto su piu' processi, treni freddo"},
- {"tappa": "157", "nota": "caldo"},
- {"tappa": "233", "freddo": true, "nota": "late attack freddo"},
- {"tappa": "233", "nota": "caldo"}
+ {
+  "tappa": "1",
+  "nota": "batteria 5: varieta di tappe"
+ },
+ {
+  "tappa": "8",
+  "nota": "batteria 5: varieta di tappe"
+ },
+ {
+  "tappa": "15",
+  "nota": "batteria 5: varieta di tappe"
+ },
+ {
+  "tappa": "16",
+  "nota": "batteria 5: varieta di tappe"
+ },
+ {
+  "tappa": "19",
+  "nota": "batteria 5: varieta di tappe"
+ },
+ {
+  "tappa": "32",
+  "nota": "batteria 5: varieta di tappe"
+ },
+ {
+  "tappa": "34",
+  "nota": "batteria 5: varieta di tappe"
+ },
+ {
+  "tappa": "41",
+  "nota": "batteria 5: varieta di tappe"
+ },
+ {
+  "tappa": "51",
+  "nota": "batteria 5: varieta di tappe"
+ },
+ {
+  "tappa": "68",
+  "nota": "batteria 5: varieta di tappe"
+ },
+ {
+  "tappa": "102",
+  "nota": "batteria 5: varieta di tappe"
+ },
+ {
+  "tappa": "119",
+  "nota": "batteria 5: varieta di tappe"
+ },
+ {
+  "tappa": "136",
+  "nota": "batteria 5: varieta di tappe"
+ },
+ {
+  "tappa": "187",
+  "nota": "batteria 5: varieta di tappe"
+ },
+ {
+  "tappa": "204",
+  "nota": "batteria 5: varieta di tappe"
+ },
+ {
+  "tappa": "221",
+  "nota": "batteria 5: varieta di tappe"
+ }
 ]
