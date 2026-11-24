@@ -1,0 +1,78 @@
+# PROVA (24/11): quanto costa il checkout del motore sul runner, intero o parziale. Non genera video.
+# Le tre prove girano in job separati (stessa macchina, stesse condizioni) e stampano solo secondi e dimensioni.
+name: Prova checkout
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  intero:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - run: echo "T0=$(date +%s.%N)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+        with:
+          repository: Jericho1987/virtua-cycling-video
+          ref: master
+          token: ${{ secrets.VIDEO_REPO_TOKEN }}
+          persist-credentials: false
+      - run: |
+          python3 -c "import os,time;print('INTERO: %.1f s' % (time.time()-float(os.environ['T0'])))"
+          du -sh . | cut -f1
+
+  parziale:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - run: echo "T0=$(date +%s.%N)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+        with:
+          repository: Jericho1987/virtua-cycling-video
+          ref: master
+          token: ${{ secrets.VIDEO_REPO_TOKEN }}
+          persist-credentials: false
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/giro27_fonti/
+            !/giro28_fonti/
+            !/asset/donna/
+            !/asset/classica_fasce/
+            !/asset/fasce/
+            !/asset/cerimonie_maglia_fonti/
+      - run: |
+          python3 -c "import os,time;print('PARZIALE (senza donna, fasce, fonti): %.1f s' % (time.time()-float(os.environ['T0'])))"
+          du -sh . | cut -f1
+
+  parziale_piu_donna:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - run: echo "T0=$(date +%s.%N)" >> "$GITHUB_ENV"
+      - uses: actions/checkout@v4
+        with:
+          repository: Jericho1987/virtua-cycling-video
+          ref: master
+          token: ${{ secrets.VIDEO_REPO_TOKEN }}
+          persist-credentials: true
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/giro27_fonti/
+            !/giro28_fonti/
+            !/asset/donna/
+            !/asset/classica_fasce/
+            !/asset/fasce/
+            !/asset/cerimonie_maglia_fonti/
+      - name: Aggiunge asset/donna a richiesta (come per una gara donne)
+        run: |
+          printf '%s\n' '/*' '!/giro27_fonti/' '!/giro28_fonti/' '!/asset/classica_fasce/' '!/asset/fasce/' '!/asset/cerimonie_maglia_fonti/' | git sparse-checkout set --no-cone --stdin
+      - run: |
+          python3 -c "import os,time;print('PARZIALE + DONNA a richiesta: %.1f s' % (time.time()-float(os.environ['T0'])))"
+          du -sh . | cut -f1
