@@ -1,8 +1,6 @@
 [
- {"tappa": "157", "freddo": true, "nota": "batteria 3: core-1 e alto con cache, treni freddo"},
+ {"tappa": "157", "freddo": true, "nota": "batteria 4: alto su piu' processi, treni freddo"},
  {"tappa": "157", "nota": "caldo"},
  {"tappa": "233", "freddo": true, "nota": "late attack freddo"},
- {"tappa": "233", "nota": "caldo"},
- {"tappa": "170", "freddo": true, "nota": "spicciolata freddo"},
- {"tappa": "170", "nota": "caldo"}
+ {"tappa": "233", "nota": "caldo"}
 ]
