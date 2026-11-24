@@ -18,6 +18,11 @@ on:
         type: choice
         options: ['1080', '720']
         default: '1080'
+      asset:
+        description: 'tutti = scarica tutto il repo (come oggi); su_misura = solo il codice, poi i soli asset che il video usa'
+        type: choice
+        options: ['tutti', 'su_misura']
+        default: 'tutti'
       processi:
         description: 'Processi della frontale (vuoto = tutti i core; per le prove di velocita)'
         type: string
@@ -37,13 +42,32 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-      - name: Motore (repository privato)
+      - name: Motore (repository privato, tutto)
+        if: (github.event.inputs.asset || github.event.client_payload.asset) != 'su_misura'
         uses: actions/checkout@v4
         with:
           repository: Jericho1987/virtua-cycling-video
           ref: master
           token: ${{ secrets.VIDEO_REPO_TOKEN }}
           persist-credentials: false
+
+      - name: Motore (repository privato, solo codice, asset su misura dopo)
+        if: (github.event.inputs.asset || github.event.client_payload.asset) == 'su_misura'
+        uses: actions/checkout@v4
+        with:
+          repository: Jericho1987/virtua-cycling-video
+          ref: master
+          token: ${{ secrets.VIDEO_REPO_TOKEN }}
+          persist-credentials: true     # serve per scaricare i blob degli asset quando la scena e' pronta (si toglie a fine job)
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/asset/
+            !/giro27_fonti/
+            !/giro28_fonti/
+            /asset/*.json
+            /asset/*.png
 
       - uses: actions/setup-python@v5
         with:
@@ -115,6 +139,7 @@ jobs:
           VC_TESTE: ${{ github.workspace }}/cache_teste
           VC_SS: ${{ (github.event.inputs.risoluzione || github.event.client_payload.risoluzione) == '720' && '0.6667' || '1' }}
           PROCESSI: ${{ github.event.inputs.processi }}
+          VC_ASSET: ${{ (github.event.inputs.asset || github.event.client_payload.asset) == 'su_misura' && 'su_misura' || '' }}
         run: |
           if [[ -n "$PROCESSI" ]]; then [[ "$PROCESSI" =~ ^[1-9][0-9]*$ ]] || { echo "processi non validi"; exit 1; }; export VC_PROCESSI="$PROCESSI"; fi
           [[ "$TAPPA" =~ ^[0-9]+$ ]] || { echo "tappa non valida"; exit 1; }
