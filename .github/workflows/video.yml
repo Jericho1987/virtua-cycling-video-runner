@@ -23,6 +23,10 @@ on:
         type: choice
         options: ['tutti', 'su_misura']
         default: 'tutti'
+      freddo:
+        description: 'Prova a freddo: non ripristina la cache delle figure (misura il costo di una tappa nuova)'
+        type: boolean
+        default: false
       processi:
         description: 'Processi della frontale (vuoto = tutti i core; per le prove di velocita)'
         type: string
@@ -110,6 +114,7 @@ jobs:
         run: echo "v=$(grep -m1 -oE '^VERSIONE *= *[0-9]+' motore/personaggi.py | grep -oE '[0-9]+')" >> "$GITHUB_OUTPUT"
 
       - name: Figure dei corridori (ripristino)
+        if: github.event.inputs.freddo != 'true'
         uses: actions/cache/restore@v4
         with:
           path: cache
