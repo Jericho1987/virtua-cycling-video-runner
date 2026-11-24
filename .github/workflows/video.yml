@@ -73,22 +73,18 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Librerie Python in cache (ambiente gia' installato)
-        id: venv
+      - name: 'Ambiente in cache (librerie Python, ffmpeg, teste), un solo ripristino invece di tre'
+        id: amb
         uses: actions/cache@v4
         with:
-          path: ~/venv
-          key: venv-${{ runner.os }}-py312-${{ hashFiles('requirements-runner.txt') }}
-
-      - name: ffmpeg in cache (solo i binari)
-        id: ffc
-        uses: actions/cache@v4
-        with:
-          path: ~/ffbin
-          key: ffmpeg-bin-7.0.2-linux-x64
+          path: |
+            ~/venv
+            ~/ffbin
+            cache_teste
+          key: ambiente-${{ runner.os }}-py312-ff7.0.2-${{ hashFiles('requirements-runner.txt', 'generatore/teste_generiche.json') }}
 
       - name: ffmpeg (scaricato solo se non e' in cache)
-        if: steps.ffc.outputs.cache-hit != 'true'
+        if: steps.amb.outputs.cache-hit != 'true'
         id: ffmpeg
         uses: FedericoCarboni/setup-ffmpeg@v3
         continue-on-error: true
@@ -108,12 +104,6 @@ jobs:
         run: |
           command -v ffmpeg > /dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg > /dev/null; }   # ripiego se il passo veloce fallisce
           [[ -x ~/venv/bin/python ]] || { python -m venv ~/venv && ~/venv/bin/pip install -q -r requirements-runner.txt; }
-
-      - name: Teste in cache
-        uses: actions/cache@v4
-        with:
-          path: cache_teste
-          key: teste-${{ hashFiles('generatore/teste_generiche.json') }}
 
       - name: Versione delle figure
         id: ver
