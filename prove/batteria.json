@@ -1,8 +1,8 @@
 [
- {"tappa": "170", "freddo": true},
- {"tappa": "170"},
- {"tappa": "233", "freddo": true},
- {"tappa": "233"},
- {"tappa": "157", "freddo": true},
- {"tappa": "157"}
+ {"tappa": "170", "freddo": true, "nota": "pose a richiesta, freddo"},
+ {"tappa": "170", "nota": "caldo"},
+ {"tappa": "233", "freddo": true, "nota": "late attack, freddo"},
+ {"tappa": "233", "nota": "caldo"},
+ {"tappa": "157", "freddo": true, "nota": "treni, freddo"},
+ {"tappa": "157", "nota": "caldo"}
 ]
