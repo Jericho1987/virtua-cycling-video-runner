@@ -1,0 +1,42 @@
+# Batteria di prove automatiche (24/11): un push che modifica prove/batteria.json lancia i video di prova uno dopo l'altro (a freddo e a caldo).
+# Nessun upload: non si sporca l'admin. Ogni lancio scrive i suoi tempi in un'annotazione (leggibile via API anche senza token).
+name: Prova batteria
+
+on:
+  push:
+    paths: ['prove/batteria.json']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: batteria
+  cancel-in-progress: false
+
+jobs:
+  leggi:
+    runs-on: ubuntu-latest
+    outputs:
+      matrice: ${{ steps.m.outputs.matrice }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: m
+        run: |
+          M=$(python3 -c "import json; print(json.dumps({'include': json.load(open('prove/batteria.json'))}))")
+          echo "matrice=$M" >> "$GITHUB_OUTPUT"
+
+  prova:
+    needs: leggi
+    strategy:
+      max-parallel: 1
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.leggi.outputs.matrice) }}
+    uses: ./.github/workflows/video-prova.yml
+    with:
+      tappa: ${{ matrix.tappa }}
+      risoluzione: ${{ matrix.risoluzione || '720' }}
+      asset: ${{ matrix.asset || 'su_misura' }}
+      freddo: ${{ matrix.freddo || false }}
+      processi: ${{ matrix.processi || '' }}
+    secrets: inherit

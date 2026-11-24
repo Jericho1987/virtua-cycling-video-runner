@@ -1,0 +1,149 @@
+# Copia RIUTILIZZABILE di video.yml solo per le prove automatiche (prova-batteria.yml). Il workflow di produzione (video.yml) resta intatto.
+# Differenze: parametri via workflow_call, nessun upload (senza_upload), riepilogo dei tempi come ANNOTAZIONE (si legge via API anche senza token).
+name: Video prova
+
+on:
+  workflow_call:
+    inputs:
+      tappa:
+        type: string
+        required: true
+      risoluzione:
+        type: string
+        default: '720'
+      asset:
+        type: string
+        default: 'su_misura'
+      freddo:
+        type: boolean
+        default: false
+      processi:
+        type: string
+        default: ''
+      senza_upload:
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  video:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Motore (repository privato, tutto)
+        if: inputs.asset != 'su_misura'
+        uses: actions/checkout@v4
+        with:
+          repository: Jericho1987/virtua-cycling-video
+          ref: master
+          token: ${{ secrets.VIDEO_REPO_TOKEN }}
+          persist-credentials: false
+
+      - name: Motore (repository privato, solo codice, asset su misura dopo)
+        if: inputs.asset == 'su_misura'
+        uses: actions/checkout@v4
+        with:
+          repository: Jericho1987/virtua-cycling-video
+          ref: master
+          token: ${{ secrets.VIDEO_REPO_TOKEN }}
+          persist-credentials: true     # serve per scaricare i blob degli asset quando la scena e' pronta (si toglie a fine job)
+          filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/asset/
+            !/giro27_fonti/
+            !/giro28_fonti/
+            /asset/*.json
+            /asset/*.png
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: 'Ambiente in cache (librerie Python, ffmpeg, teste), un solo ripristino invece di tre'
+        id: amb
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/venv
+            ~/ffbin
+            cache_teste
+          key: ambiente-${{ runner.os }}-py312-ff7.0.2-${{ hashFiles('requirements-runner.txt', 'generatore/teste_generiche.json') }}
+
+      - name: ffmpeg (scaricato solo se non e' in cache)
+        if: steps.amb.outputs.cache-hit != 'true'
+        id: ffmpeg
+        uses: FedericoCarboni/setup-ffmpeg@v3
+        continue-on-error: true
+        with:
+          github-token: ${{ github.token }}
+
+      - name: ffmpeg nel PATH (e copia dei binari per la cache)
+        run: |
+          mkdir -p ~/ffbin
+          if [[ ! -x ~/ffbin/ffmpeg ]] && command -v ffmpeg > /dev/null; then
+            cp "$(command -v ffmpeg)" ~/ffbin/
+            command -v ffprobe > /dev/null && cp "$(command -v ffprobe)" ~/ffbin/
+          fi
+          if [[ -x ~/ffbin/ffmpeg ]]; then echo "$HOME/ffbin" >> "$GITHUB_PATH"; else rm -rf ~/ffbin; fi
+
+      - name: Strumenti
+        run: |
+          command -v ffmpeg > /dev/null || { sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg > /dev/null; }   # ripiego se il passo veloce fallisce
+          [[ -x ~/venv/bin/python ]] || { python -m venv ~/venv && ~/venv/bin/pip install -q -r requirements-runner.txt; }
+
+      - name: Versione delle figure
+        id: ver
+        run: echo "v=$(grep -m1 -oE '^VERSIONE *= *[0-9]+' motore/personaggi.py | grep -oE '[0-9]+')" >> "$GITHUB_OUTPUT"
+
+      - name: Figure dei corridori (ripristino)
+        if: ${{ !inputs.freddo }}
+        uses: actions/cache/restore@v4
+        with:
+          path: cache
+          key: corridori2-${{ steps.ver.outputs.v }}-${{ github.run_id }}
+          restore-keys: corridori2-${{ steps.ver.outputs.v }}-
+
+      - name: Elenco delle figure prima del video
+        id: fig_prima
+        run: echo "h=$(find cache -type f 2>/dev/null | sort | sha1sum | cut -c1-20)" >> "$GITHUB_OUTPUT"
+
+      - name: Video
+        env:
+          TAPPA: ${{ inputs.tappa }}
+          SENZA_UPLOAD: ${{ inputs.senza_upload }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          VC_TESTE: ${{ github.workspace }}/cache_teste
+          VC_SS: ${{ inputs.risoluzione == '720' && '0.6667' || '1' }}
+          PROCESSI: ${{ inputs.processi }}
+          VC_ASSET: ${{ inputs.asset == 'su_misura' && 'su_misura' || '' }}
+        run: |
+          if [[ -n "$PROCESSI" ]]; then [[ "$PROCESSI" =~ ^[1-9][0-9]*$ ]] || { echo "processi non validi"; exit 1; }; export VC_PROCESSI="$PROCESSI"; fi
+          [[ "$TAPPA" =~ ^[0-9]+$ ]] || { echo "tappa non valida"; exit 1; }
+          set -o pipefail
+          NU=""; [[ "$SENZA_UPLOAD" == "true" ]] && NU="--no-upload"
+          VC_PY=~/venv/bin/python ~/venv/bin/python -I generatore/esegui.py --tappa "$TAPPA" $NU 2>&1 | tee "$RUNNER_TEMP/esegui.log"
+
+      - name: Elenco delle figure dopo il video
+        id: fig_dopo
+        run: echo "h=$(find cache -type f 2>/dev/null | sort | sha1sum | cut -c1-20)" >> "$GITHUB_OUTPUT"
+
+      - name: Figure dei corridori (salvataggio solo se sono cambiate)
+        if: steps.fig_dopo.outputs.h != steps.fig_prima.outputs.h
+        uses: actions/cache/save@v4
+        with:
+          path: cache
+          key: corridori2-${{ steps.ver.outputs.v }}-${{ github.run_id }}
+
+      - name: Riepilogo dei tempi (annotazione leggibile via API)
+        if: always()
+        run: |
+          L="$RUNNER_TEMP/esegui.log"
+          [[ -f "$L" ]] || { echo "::notice title=tempi::nessun log"; exit 0; }
+          MSG=$(grep -E '^(tempo|core|asset su|tappa|video ok|fine|render fallito)|^  tempo' "$L" | sed 's/^  //' | paste -sd '|' -)
+          ERR=$(grep -E '^[A-Za-z]*(Error|Exception)|Traceback' "$L" | tail -1 | sed -E 's#https?://[^ ]+#URL#g' | cut -c1-120)
+          echo "::notice title=tempi tappa ${{ inputs.tappa }} freddo=${{ inputs.freddo }} asset=${{ inputs.asset }}::${MSG}${ERR:+ | ERRORE: $ERR}"
