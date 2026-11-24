@@ -132,6 +132,9 @@ jobs:
           NU=""; [[ "$SENZA_UPLOAD" == "true" ]] && NU="--no-upload"
           VC_PY=~/venv/bin/python ~/venv/bin/python -I generatore/esegui.py --tappa "$TAPPA" $NU 2>&1 | tee "$RUNNER_TEMP/esegui.log"
 
+      - name: Tetto di dimensione della cache delle figure
+        run: ~/venv/bin/python -I copioni/pulisci_cache_dimensione.py cache 150
+
       - name: Elenco delle figure dopo il video
         id: fig_dopo
         run: echo "h=$(find cache -type f 2>/dev/null | sort | sha1sum | cut -c1-20)" >> "$GITHUB_OUTPUT"
