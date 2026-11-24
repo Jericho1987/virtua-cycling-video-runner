@@ -23,6 +23,10 @@ on:
       senza_upload:
         type: boolean
         default: true
+      serie:
+        description: 'indice del lancio nella batteria: chiave di cache diversa per ogni lancio (stesso run_id per tutti)'
+        type: string
+        default: '0'
 
 permissions:
   contents: read
@@ -104,7 +108,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: cache
-          key: corridori2-${{ steps.ver.outputs.v }}-${{ github.run_id }}
+          key: corridori2-${{ steps.ver.outputs.v }}-${{ github.run_id }}-${{ inputs.serie }}
           restore-keys: corridori2-${{ steps.ver.outputs.v }}-
 
       - name: Elenco delle figure prima del video
@@ -137,7 +141,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: cache
-          key: corridori2-${{ steps.ver.outputs.v }}-${{ github.run_id }}
+          key: corridori2-${{ steps.ver.outputs.v }}-${{ github.run_id }}-${{ inputs.serie }}
 
       - name: Riepilogo dei tempi (annotazione leggibile via API)
         if: always()

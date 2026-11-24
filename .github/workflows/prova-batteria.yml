@@ -39,4 +39,5 @@ jobs:
       asset: ${{ matrix.asset || 'su_misura' }}
       freddo: ${{ matrix.freddo || false }}
       processi: ${{ matrix.processi || '' }}
+      serie: ${{ strategy.job-index }}
     secrets: inherit
