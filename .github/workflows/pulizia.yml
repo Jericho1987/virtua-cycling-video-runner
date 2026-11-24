@@ -11,6 +11,10 @@ on:
         description: 'Cancella davvero (se spento si fa solo la prova: conta e basta)'
         type: boolean
         default: false
+      giorni_scartati:
+        description: 'Giorni di attesa per i video scartati (7 di norma; 0 = subito, per provare)'
+        type: string
+        default: '7'
 
 permissions:
   contents: read
@@ -35,6 +39,8 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           ESEGUI: ${{ github.event_name == 'schedule' && 'true' || github.event.inputs.esegui }}
+          GIORNI_SCARTATI: ${{ github.event.inputs.giorni_scartati }}
         run: |
-          OPZ=""; [[ "$ESEGUI" == "true" ]] && OPZ="--esegui"
+          GS="${GIORNI_SCARTATI:-7}"; [[ "$GS" =~ ^[0-9]+$ ]] || { echo "giorni non validi"; exit 1; }
+          OPZ="--scartati $GS"; [[ "$ESEGUI" == "true" ]] && OPZ="$OPZ --esegui"
           python3 -I generatore/pulizia.py $OPZ
