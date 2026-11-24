@@ -1,0 +1,40 @@
+# Pulizia dei video social vecchi nel bucket video-arrivi (scartati 7 giorni, superati 7, pubblicati 60).
+# Il codice sta nel repository PRIVATO. I log sono pubblici: lo script stampa solo conteggi.
+name: Pulizia video
+
+on:
+  schedule:
+    - cron: '30 3 * * *'   # ogni notte, 03:30 UTC
+  workflow_dispatch:
+    inputs:
+      esegui:
+        description: cancella davvero (se spento: solo prova, conta e basta)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  pulizia:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Script (repository privato, solo generatore/pulizia.py)
+        uses: actions/checkout@v4
+        with:
+          repository: Jericho1987/virtua-cycling-video
+          ref: master
+          token: ${{ secrets.VIDEO_REPO_TOKEN }}
+          persist-credentials: false
+          sparse-checkout: generatore/pulizia.py
+          sparse-checkout-cone-mode: false
+
+      - name: Pulizia
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          ESEGUI: ${{ github.event_name == 'schedule' && 'true' || github.event.inputs.esegui }}
+        run: |
+          OPZ=""; [[ "$ESEGUI" == "true" ]] && OPZ="--esegui"
+          python3 -I generatore/pulizia.py $OPZ
