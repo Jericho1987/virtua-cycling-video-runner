@@ -1,10 +1,29 @@
 [
  {
-  "tappa": "1",
-  "nota": "crono squadre dopo correzione teste"
+  "tappa": "157",
+  "freddo": true,
+  "nota": "batt 8: alto core/2, treni freddo"
  },
  {
-  "tappa": "19",
-  "nota": "crono squadre dopo correzione teste"
+  "tappa": "157",
+  "nota": "caldo"
+ },
+ {
+  "tappa": "233",
+  "freddo": true,
+  "nota": "late attack freddo"
+ },
+ {
+  "tappa": "233",
+  "nota": "caldo"
+ },
+ {
+  "tappa": "157",
+  "freddo": true,
+  "nota": "ripetizione freddo (rumore del runner)"
+ },
+ {
+  "tappa": "157",
+  "nota": "ripetizione caldo"
  }
 ]
